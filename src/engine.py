@@ -12,6 +12,7 @@ from typing import Optional, List, Tuple, Dict, Any
 from .core.board import Board
 from .core.moves import MoveGenerator
 from .core.enhanced_evaluate import EnhancedEvaluator
+from .core.opening_book import AdvancedOpeningBook
 from .search.enhanced import TranspositionTable, MoveOrderer, NodeType
 from .uci.protocol_v2_2 import UCIProtocol
 
@@ -24,6 +25,7 @@ class SlowMateEngine:
         self.board = Board()
         self.move_generator = MoveGenerator(self.board)
         self.evaluator = EnhancedEvaluator()
+        self.opening_book = AdvancedOpeningBook()  # v3.2: Enhanced opening book
         self.tt = TranspositionTable(size_mb=64)
         self.move_orderer = MoveOrderer()
         self.uci = UCIProtocol(self)
@@ -51,7 +53,7 @@ class SlowMateEngine:
         
     def get_version(self) -> str:
         """Return engine version."""
-        return "3.0"
+        return "3.2"
         
     def new_game(self):
         """Reset the engine for a new game."""
@@ -103,9 +105,23 @@ class SlowMateEngine:
         self.search_deadline = self.start_time + allocated_time
         
         try:
-            self.uci._out(f"info string SlowMate v3.0 - Allocated time: {allocated_time:.3f}s")
+            self.uci._out(f"info string SlowMate v3.2 - Allocated time: {allocated_time:.3f}s")
         except Exception:
             pass
+        
+        # v3.2: Check opening book first
+        book_move = self.opening_book.select_strategic_move(self.board.board, "V7P3R")
+        if book_move:
+            try:
+                move = chess.Move.from_uci(book_move)
+                if move in self.board.board.legal_moves:
+                    try:
+                        self.uci._out(f"info string Opening book move: {book_move}")
+                    except Exception:
+                        pass
+                    return move
+            except:
+                pass  # Invalid book move, continue with search
         
         # Get legal moves
         moves = self.move_generator.get_legal_moves()
