@@ -13,8 +13,8 @@ from typing import Optional
 # Add the parent directory to the path to import slowmate modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from slowmate.engine import SlowMateEngine
-from slowmate.uci.protocol_v2_2 import UCIProtocol
+from engine import SlowMateEngine
+from uci.protocol_v2_2 import UCIProtocol
 
 
 class UCIMain:

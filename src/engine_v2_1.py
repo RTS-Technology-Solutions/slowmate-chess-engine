@@ -8,11 +8,11 @@ import chess
 import time
 from typing import Optional, List, Tuple
 
-from .core.board import Board
-from .core.moves import MoveGenerator
-from .core.evaluate import Evaluator
-from .search.enhanced import TranspositionTable, MoveOrderer, NodeType
-from .uci.protocol import UCIProtocol
+from core.board import Board
+from core.moves import MoveGenerator
+from core.evaluate import Evaluator
+from search.enhanced import TranspositionTable, MoveOrderer, NodeType
+from uci.protocol import UCIProtocol
 
 
 class SlowMateEngine:

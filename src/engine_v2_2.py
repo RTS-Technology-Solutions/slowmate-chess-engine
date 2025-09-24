@@ -9,11 +9,11 @@ import time
 import math
 from typing import Optional, List, Tuple, Dict
 
-from .core.board import Board
-from .core.moves import MoveGenerator
-from .core.enhanced_evaluate import EnhancedEvaluator
-from .search.enhanced import TranspositionTable, MoveOrderer, NodeType
-from .uci.protocol_v2_2 import UCIProtocol
+from core.board import Board
+from core.moves import MoveGenerator
+from core.enhanced_evaluate import EnhancedEvaluator
+from search.enhanced import TranspositionTable, MoveOrderer, NodeType
+from uci.protocol_v2_2 import UCIProtocol
 
 
 class SlowMateEngine:

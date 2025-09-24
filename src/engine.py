@@ -9,12 +9,12 @@ import time
 import math
 from typing import Optional, List, Tuple, Dict, Any
 
-from .core.board import Board
-from .core.moves import MoveGenerator
-from .core.enhanced_evaluate import EnhancedEvaluator
-from .core.opening_book import AdvancedOpeningBook
-from .search.enhanced import TranspositionTable, MoveOrderer, NodeType
-from .uci.protocol_v2_2 import UCIProtocol
+from core.board import Board
+from core.moves import MoveGenerator
+from core.enhanced_evaluate import EnhancedEvaluator
+from core.opening_book import AdvancedOpeningBook
+from search.enhanced import TranspositionTable, MoveOrderer, NodeType
+from uci.protocol_v2_2 import UCIProtocol
 
 
 class SlowMateEngine:
@@ -114,7 +114,7 @@ class SlowMateEngine:
         if book_move:
             try:
                 move = chess.Move.from_uci(book_move)
-                if move in self.board.board.legal_moves:
+                if move in list(self.board.board.legal_moves):
                     try:
                         self.uci._out(f"info string Opening book move: {book_move}")
                     except Exception:
