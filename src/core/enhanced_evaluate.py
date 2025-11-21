@@ -212,12 +212,8 @@ class EnhancedEvaluator:
         return 0
     
     def _evaluate_positional_factors(self, board: chess.Board, is_middlegame: bool) -> float:
-        """v3.2 ENHANCEMENT: Evaluate positional factors with opening bonuses."""
+        """v2.2 ENHANCEMENT: Evaluate positional factors."""
         score = 0
-        
-        # v3.2: Opening phase bonuses (first 15 moves)
-        if len(board.move_stack) < 30:  # Opening phase (15 moves for each side)
-            score += self._evaluate_opening_principles(board) * 0.8
         
         # Pawn structure evaluation
         score += self._evaluate_pawn_structure(board) * self.weights['pawn_structure']
@@ -449,81 +445,6 @@ class EnhancedEvaluator:
                     mobility += len(attacks)
             
             score += mobility * 0.5 * color_factor
-        
-        return score
-    
-    def _evaluate_opening_principles(self, board: chess.Board) -> float:
-        """v3.2: Evaluate adherence to opening principles."""
-        score = 0
-        move_count = len(board.move_stack)
-        
-        for color in [chess.WHITE, chess.BLACK]:
-            color_factor = 1 if color == chess.WHITE else -1
-            
-            # Development bonus - pieces off back rank
-            development_bonus = 0
-            back_rank = 0 if color == chess.WHITE else 7
-            
-            # Knights development
-            knights = board.pieces(chess.KNIGHT, color)
-            for knight_sq in knights:
-                if chess.square_rank(knight_sq) != back_rank:
-                    development_bonus += 15
-                    # Extra bonus for good knight squares
-                    if knight_sq in [chess.C3, chess.F3, chess.C6, chess.F6]:
-                        development_bonus += 10
-            
-            # Bishops development
-            bishops = board.pieces(chess.BISHOP, color)
-            for bishop_sq in bishops:
-                if chess.square_rank(bishop_sq) != back_rank:
-                    development_bonus += 12
-                    # Extra bonus for active bishops
-                    if len(board.attacks(bishop_sq)) >= 7:
-                        development_bonus += 8
-            
-            # Center control bonus - bonus for pawns in center
-            center_squares = [chess.E4, chess.D4] if color == chess.WHITE else [chess.E5, chess.D5]
-            pawns = board.pieces(chess.PAWN, color)
-            for center_sq in center_squares:
-                if center_sq in pawns:
-                    score += 25 * color_factor  # Strong bonus for center pawns
-            
-            # Extended center support
-            extended_center = [chess.C4, chess.F4, chess.E3, chess.D3] if color == chess.WHITE else [chess.C5, chess.F5, chess.E6, chess.D6]
-            for ext_sq in extended_center:
-                if ext_sq in pawns:
-                    score += 10 * color_factor
-            
-            # King safety in opening - penalize early king moves
-            king_sq = board.king(color)
-            if king_sq is not None:
-                king_rank = chess.square_rank(king_sq)
-                if color == chess.WHITE and king_rank != 0 and not board.has_kingside_castling_rights(color) and not board.has_queenside_castling_rights(color):
-                    score -= 30 * color_factor  # Penalty for moving king without castling
-                elif color == chess.BLACK and king_rank != 7 and not board.has_kingside_castling_rights(color) and not board.has_queenside_castling_rights(color):
-                    score -= 30 * color_factor
-            
-            # Castling bonus
-            if ((color == chess.WHITE and king_sq in [chess.G1, chess.C1]) or 
-                (color == chess.BLACK and king_sq in [chess.G8, chess.C8])):
-                score += 35 * color_factor
-            
-            # Queen development penalty - don't bring queen out too early
-            queen_squares = board.pieces(chess.QUEEN, color)
-            if queen_squares:
-                queen_sq = next(iter(queen_squares))
-                queen_rank = chess.square_rank(queen_sq)
-                if move_count < 20:  # Early in opening
-                    if ((color == chess.WHITE and queen_rank > 1) or 
-                        (color == chess.BLACK and queen_rank < 6)):
-                        # Check if queen is attacked
-                        if board.is_attacked_by(not color, queen_sq):
-                            score -= 25 * color_factor  # Penalty for early, attacked queen
-                        else:
-                            score -= 10 * color_factor  # Small penalty for early queen
-            
-            score += development_bonus * color_factor
         
         return score
     
