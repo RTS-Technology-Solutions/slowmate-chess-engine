@@ -101,12 +101,12 @@ class EnhancedEvaluator:
            -53, -34, -21, -11, -28, -14, -24, -43
         ]
         
-        # v2.2 ENHANCEMENT: Evaluation weights
+        # v3.2 ENHANCEMENT: Evaluation weights (king safety boosted)
         self.weights = {
             'material': 1.0,
             'piece_square': 0.8,
             'pawn_structure': 0.6,
-            'king_safety': 0.7,
+            'king_safety': 1.2,  # v3.2: Increased from 0.7
             'piece_activity': 0.5,
             'endgame_factor': 0.4
         }
@@ -313,6 +313,25 @@ class EnhancedEvaluator:
             
             if king_square is None:
                 continue
+            
+            # v3.2: Castling bonus - reward having castled
+            if color == chess.WHITE:
+                # White has castled if king on g1 or c1 and no castling rights
+                if not board.has_kingside_castling_rights(color) and not board.has_queenside_castling_rights(color):
+                    if king_square in [chess.G1, chess.C1]:
+                        score += 50 * color_factor  # v3.2: Castling bonus
+            else:
+                # Black has castled if king on g8 or c8 and no castling rights
+                if not board.has_kingside_castling_rights(color) and not board.has_queenside_castling_rights(color):
+                    if king_square in [chess.G8, chess.C8]:
+                        score += 50 * color_factor
+            
+            # v3.2: Penalize king moves before castling
+            if board.has_kingside_castling_rights(color) or board.has_queenside_castling_rights(color):
+                # King should be on starting square
+                start_square = chess.E1 if color == chess.WHITE else chess.E8
+                if king_square != start_square:
+                    score += -30 * color_factor  # v3.2: Early king move penalty
             
             # Pawn shield
             shield_score = self._evaluate_pawn_shield(board, king_square, color)

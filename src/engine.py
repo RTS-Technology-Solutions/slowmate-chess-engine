@@ -14,10 +14,11 @@ from .core.moves import MoveGenerator
 from .core.enhanced_evaluate import EnhancedEvaluator
 from .search.enhanced import TranspositionTable, MoveOrderer, NodeType
 from .uci.protocol_v2_2 import UCIProtocol
+from .knowledge.opening_lines import OpeningLines
 
 
 class SlowMateEngine:
-    """SlowMate v3.0 - Production Release with Critical Bug Fixes."""
+    """SlowMate v3.2 - Opening Book & Tactical Enhancement Release."""
     
     def __init__(self):
         """Initialize the production chess engine."""
@@ -27,18 +28,19 @@ class SlowMateEngine:
         self.tt = TranspositionTable(size_mb=64)
         self.move_orderer = MoveOrderer()
         self.uci = UCIProtocol(self)
+        self.opening_book = OpeningLines()  # v3.2: Opening book
         self.nodes = 0
-        self.max_depth = 6
+        self.max_depth = 8  # v3.2: Increased from 6
         self.search_deadline = None
         self.last_score = None
         self.start_time = None
         self.current_pv = []  # Principal variation line
         
-        # v3.0: Advanced search parameters
+        # v3.2: Enhanced search parameters
         self.aspiration_window = 50
-        self.null_move_reduction = 2
-        self.late_move_reduction_threshold = 4
-        self.quiescence_max_depth = 4
+        self.null_move_reduction = 3  # v3.2: Increased from 2
+        self.late_move_reduction_threshold = 3  # v3.2: More aggressive
+        self.quiescence_max_depth = 8  # v3.2: Doubled from 4
         
         # v3.0: History and killer move management
         self.history_table = {}
@@ -51,7 +53,7 @@ class SlowMateEngine:
         
     def get_version(self) -> str:
         """Return engine version."""
-        return "3.0"
+        return "3.2"
         
     def new_game(self):
         """Reset the engine for a new game."""
@@ -95,6 +97,19 @@ class SlowMateEngine:
         self.last_score = None
         self.start_time = time.time()
         self.uci.stop_requested = False
+        
+        # v3.2: Check opening book first
+        if self.opening_book.is_in_book(self.board.board):
+            book_move_uci = self.opening_book.get_book_move(self.board.board)
+            if book_move_uci:
+                try:
+                    book_move = chess.Move.from_uci(book_move_uci)
+                    if book_move in self.board.board.legal_moves:
+                        # Report book move to UCI
+                        self.uci.send_info(f"Opening book move: {book_move_uci}")
+                        return book_move
+                except:
+                    pass  # Fall through to search if book move invalid
         
         # Calculate time allocation
         allocated_time = self._calculate_time_allocation(

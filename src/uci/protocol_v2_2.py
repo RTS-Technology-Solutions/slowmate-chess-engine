@@ -76,6 +76,10 @@ class UCIProtocol:
         except Exception:
             pass  # Fail silently to avoid UCI protocol disruption
     
+    def send_info(self, message: str):
+        """Send UCI info string message."""
+        self._out(f"info string {message}")
+    
     def _debug(self, message: str):
         """Send debug message if debug mode is enabled."""
         if self.debug_mode:
@@ -130,7 +134,7 @@ class UCIProtocol:
     
     def _handle_uci(self):
         """Handle UCI initialization."""
-        self._out("id name SlowMate v3.1")
+        self._out("id name SlowMate v3.2")
         self._out("id author SlowMate Team")
         
         # Send options
@@ -361,11 +365,21 @@ class UCIProtocol:
                 # Calculate time from time control
                 time_limit = self._calculate_time_limit(search_params)
             
-            # Perform search
+            # Perform search - extract only the params that search() expects
+            wtime = search_params.get('wtime')
+            btime = search_params.get('btime')
+            winc = search_params.get('winc')
+            binc = search_params.get('binc')
+            movestogo = search_params.get('movestogo')
+            
             best_move = self.engine.search(
                 time_limit_ms=time_limit,
                 depth_override=depth_limit,
-                **search_params
+                wtime=wtime,
+                btime=btime,
+                winc=winc,
+                binc=binc,
+                moves_to_go=movestogo
             )
             
             # Calculate search statistics
@@ -377,8 +391,10 @@ class UCIProtocol:
                 self.search_stats['nodes_per_second'] = int(self.engine.nodes / max(elapsed_time, 0.001))
             
             # Send best move
-            if best_move and not self.stop_requested:
+            if best_move:
+                # Always output the best move if we have one, regardless of stop_requested
                 self._out(f"bestmove {best_move.uci()}")
+                self._debug(f"Search completed: {best_move.uci()} in {elapsed_time:.3f}s, {self.engine.nodes} nodes")
                 self._debug(f"Search completed: {best_move.uci()} in {elapsed_time:.3f}s, {self.engine.nodes} nodes")
             else:
                 # Emergency fallback
