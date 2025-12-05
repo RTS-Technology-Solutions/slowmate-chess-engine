@@ -1,7 +1,8 @@
 """
-SlowMate Chess Engine v3.0 - Production Release
-Comprehensive fix for evaluation perspective bug and competitive restoration
-Target: Stable 650+ ELO with robust UCI compliance and reliable move generation
+SlowMate Chess Engine v3.3 - Mate Detection Fix
+Critical fix for quiescence search blindness to checkmate/stalemate
+Prevents catastrophic mate-in-1 blunders that threw away winning positions
+Target: Beat v7p3r_bot through tactical superiority
 """
 
 import chess
@@ -18,7 +19,7 @@ from .uci.protocol_v2_2 import UCIProtocol
 
 
 class SlowMateEngine:
-    """SlowMate v3.0 - Production Release with Critical Bug Fixes."""
+    """SlowMate v3.3 - Mate Detection Fix for Competitive Play."""
     
     def __init__(self):
         """Initialize the production chess engine."""
@@ -510,7 +511,8 @@ class SlowMateEngine:
         moves = self.move_generator.get_legal_moves()
         if not moves:
             if self.board.board.is_check():
-                return -20000 + self.nodes  # Checkmate (prefer shorter mates)
+                # v3.3: Mate distance scoring - prefer shorter mates
+                return -30000 + (self.max_depth - depth)
             return 0  # Stalemate
             
         tt_move = tt_entry[1] if tt_entry else None
@@ -558,20 +560,35 @@ class SlowMateEngine:
         return best_score
     
     def _quiescence_search(self, alpha: int, beta: int, depth: int) -> int:
-        """Quiescence search to avoid horizon effect."""
+        """Quiescence search with mate detection (v3.3 critical fix)."""
         self.nodes += 1
+        
+        # v3.3 CRITICAL FIX: Check for checkmate/stalemate FIRST
+        legal_moves = self.move_generator.get_legal_moves()
+        if not legal_moves:
+            if self.board.board.is_check():
+                return -30000 + self.nodes  # Checkmate
+            return 0  # Stalemate
         
         # Evaluate current position
         stand_pat = int(self.evaluator.evaluate(self.board))
         
-        if depth <= 0 or stand_pat >= beta:
+        # v3.3: Check extension - extend search when in check (forcing)
+        in_check = self.board.board.is_check()
+        if in_check and depth <= 0:
+            depth = 1  # Extend to resolve check
+        
+        if depth <= 0 and not in_check:
+            return stand_pat
+        
+        if stand_pat >= beta:
             return stand_pat
             
         alpha = max(alpha, stand_pat)
         
-        # Only consider captures in quiescence
-        moves = [move for move in self.move_generator.get_legal_moves() 
-                if self.board.board.is_capture(move)]
+        # v3.3: Consider captures AND checking moves (mate threats)
+        moves = [move for move in legal_moves 
+                if self.board.board.is_capture(move) or self.board.board.gives_check(move)]
         
         if not moves:
             return stand_pat

@@ -110,6 +110,10 @@ class MoveOrderer:
             
         score = 0
         
+        # v3.3: Checking moves (prioritize mate threats!)
+        if board.gives_check(move):
+            score += 15000
+        
         # Captures
         if board.is_capture(move):
             victim_piece = board.piece_at(move.to_square)
