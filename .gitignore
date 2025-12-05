@@ -15,3 +15,12 @@ venv.bak/
 *.egg-info/
 dist/
 build/
+
+# Secrets and tokens
+lichess-token.txt
+*token*.txt
+config.yml
+*.key
+*.pem
+.env
+.env.*
