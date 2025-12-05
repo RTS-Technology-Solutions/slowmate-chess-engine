@@ -134,7 +134,7 @@ class UCIProtocol:
     
     def _handle_uci(self):
         """Handle UCI initialization."""
-        self._out("id name SlowMate v3.2")
+        self._out("id name SlowMate v3.3")
         self._out("id author SlowMate Team")
         
         # Send options

@@ -1,0 +1,33 @@
+[Event "rated rapid game"]
+[Site "https://lichess.org/QJTFBLrr"]
+[Date "2025.12.05"]
+[White "v7p3r"]
+[Black "slowmate_bot"]
+[Result "1-0"]
+[WhiteElo "1417"]
+[BlackElo "1265"]
+[ECO "B02"]
+[Opening "Alekhine Defense"]
+[Termination "Normal"]
+[Analysis "Critical Blunder: 40...Qd8?? allowed Qxd8# - Mate in 1 missed"]
+
+1. e4 Nf6 2. Nc3 Nc6 3. Bc4 Ne5 4. Bb3 c6 5. a4 Qc7 6. d4 Ng6 7. h3 Nh4 
+8. e5 Ng8 9. g3 Ng6 10. Nf3 Nh6 11. O-O Nf5 12. Re1 c5 13. d5 c4 14. Ba2 Rg8 
+15. g4 Nfh4 16. d6 Qc6 17. Re3 Nxf3+ 18. Rxf3 Nxe5 19. Re3 exd6 20. b3 cxb3 
+21. Bxb3 Be7 22. f3 Bg5 23. Bd5 Bxe3+ 24. Kg2 Qxc3 25. Bxe3 Qxe3 26. Qg1 Qd2+ 
+27. Qf2 Qxd5 28. Re1 Qe6 29. f4 Kf8 30. fxe5 dxe5 31. Qc5+ d6 32. Qc7 Qd5+ 
+33. Kh2 Qd2+ 34. Kg3 Qxe1+ 35. Kg2 Qe4+ 36. Kf2 Qf4+ 37. Ke2 Qf6 38. c4 e4 
+39. Ke3 Qg5+ 40. Kd4 Qd8?? 41. Qxd8# 1-0
+
+{ Position after 40.Kd4:
+  Black to move, evaluation: -10.09 (Black winning)
+  Black King: e8 (undefended on d8)
+  White Queen: c7 (can capture on d8)
+  Critical mistake: Moving queen to d8 allows Qxd8# mate
+  Correct moves: 40...Qe5+ (forces king to move, continues winning attack)
+  
+  ROOT CAUSE: Mate detection failure at depth 1
+  - Engine didn't see that Qd8 is checkmate
+  - King safety evaluation missed undefended d8 square
+  - Quiescence search didn't detect mate threat
+}

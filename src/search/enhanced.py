@@ -110,12 +110,16 @@ class MoveOrderer:
             
         score = 0
         
+        # Checking moves (high priority - could be mate!)
+        if board.gives_check(move):
+            score += 15000
+        
         # Captures
         if board.is_capture(move):
             victim_piece = board.piece_at(move.to_square)
             attacker_piece = board.piece_at(move.from_square)
             if victim_piece and attacker_piece:
-                score = 10000 + self._mvv_lva(victim_piece.piece_type,
+                score += 10000 + self._mvv_lva(victim_piece.piece_type,
                                             attacker_piece.piece_type)
                                             
         # Promotions

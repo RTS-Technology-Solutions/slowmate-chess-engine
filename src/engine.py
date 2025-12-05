@@ -1,7 +1,7 @@
 """
-SlowMate Chess Engine v3.0 - Production Release
-Comprehensive fix for evaluation perspective bug and competitive restoration
-Target: Stable 650+ ELO with robust UCI compliance and reliable move generation
+SlowMate Chess Engine v3.3 - Mate Detection Fix
+Critical fix for horizon effect causing mate-in-1 blunders
+Target: Zero mate-in-1 misses, +50-100 ELO improvement
 """
 
 import chess
@@ -18,7 +18,7 @@ from .knowledge.opening_lines import OpeningLines
 
 
 class SlowMateEngine:
-    """SlowMate v3.2 - Opening Book & Tactical Enhancement Release."""
+    """SlowMate v3.3 - Mate Detection Fix Release."""
     
     def __init__(self):
         """Initialize the production chess engine."""
@@ -53,7 +53,7 @@ class SlowMateEngine:
         
     def get_version(self) -> str:
         """Return engine version."""
-        return "3.2"
+        return "3.3"
         
     def new_game(self):
         """Reset the engine for a new game."""
@@ -424,7 +424,9 @@ class SlowMateEngine:
         moves = self.move_generator.get_legal_moves()
         if not moves:
             if self.board.board.is_check():
-                return -20000 + self.nodes, []  # Checkmate (prefer shorter mates)
+                # Mate score: closer mates are better (lower negative scores for losing)
+                mate_score = -30000 + (self.max_depth - depth)
+                return mate_score, []  # Checkmate (prefer shorter mates)
             return 0, []  # Stalemate
             
         tt_move = tt_entry[1] if tt_entry else None
@@ -509,7 +511,8 @@ class SlowMateEngine:
         moves = self.move_generator.get_legal_moves()
         if not moves:
             if self.board.board.is_check():
-                return -20000 + self.nodes  # Checkmate (prefer shorter mates)
+                # Use ply distance for mate score consistency
+                return -30000 + self.nodes  # Checkmate
             return 0  # Stalemate
             
         tt_move = tt_entry[1] if tt_entry else None
@@ -557,23 +560,37 @@ class SlowMateEngine:
         return best_score
     
     def _quiescence_search(self, alpha: int, beta: int, depth: int) -> int:
-        """Quiescence search to avoid horizon effect."""
+        """Quiescence search to avoid horizon effect with mate detection."""
         self.nodes += 1
+        
+        # Check for checkmate/stalemate FIRST
+        legal_moves = self.move_generator.get_legal_moves()
+        if not legal_moves:
+            if self.board.board.is_check():
+                return -30000 + self.nodes  # Checkmate (prefer shorter mates)
+            return 0  # Stalemate
+        
+        # If in check, extend search to find escape or mate
+        in_check = self.board.board.is_check()
+        if in_check and depth <= 0:
+            depth = 1  # Extend when in check
         
         # Evaluate current position
         stand_pat = int(self.evaluator.evaluate(self.board))
         
-        if depth <= 0 or stand_pat >= beta:
-            return stand_pat
-            
-        alpha = max(alpha, stand_pat)
+        # Don't stand pat if in check - must search all moves
+        if not in_check:
+            if depth <= 0 or stand_pat >= beta:
+                return stand_pat
+            alpha = max(alpha, stand_pat)
         
-        # Only consider captures in quiescence
-        moves = [move for move in self.move_generator.get_legal_moves() 
-                if self.board.board.is_capture(move)]
+        # Consider captures and checking moves in quiescence
+        moves = [move for move in legal_moves
+                if self.board.board.is_capture(move) or 
+                   self.board.board.gives_check(move)]
         
         if not moves:
-            return stand_pat
+            return stand_pat if not in_check else alpha
             
         # Order captures by SEE (Static Exchange Evaluation)
         moves.sort(key=lambda m: self._see_capture_value(m), reverse=True)
