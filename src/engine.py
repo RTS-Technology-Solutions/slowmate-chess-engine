@@ -1,8 +1,8 @@
 """
-SlowMate Chess Engine v3.3 - Mate Detection Fix
-Critical fix for quiescence search blindness to checkmate/stalemate
-Prevents catastrophic mate-in-1 blunders that threw away winning positions
-Target: Beat v7p3r_bot through tactical superiority
+SlowMate Chess Engine v3.4 - Opening Book Scope Fix
+Critical bug fix: Opening book was applying to ALL positions (entire game),
+generating terrible fallback moves. Now limited to first 15 moves only.
+Also includes v3.3 mate detection fix in quiescence search.
 """
 
 import chess
@@ -54,7 +54,7 @@ class SlowMateEngine:
         
     def get_version(self) -> str:
         """Return engine version."""
-        return "3.2"
+        return "3.4"
         
     def new_game(self):
         """Reset the engine for a new game."""

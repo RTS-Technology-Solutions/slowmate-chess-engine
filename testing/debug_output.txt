@@ -1,0 +1,179 @@
+SlowMate v3.3 Engine Search Debug
+======================================================================
+
+======================================================================
+Testing: Opening position (why Nh3?)
+FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+======================================================================
+
+Position:
+r n b q k b n r
+p p p p p p p p
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+P P P P P P P P
+R N B Q K B N R
+
+Turn: White
+In check: False
+
+Legal moves (20):
+  g1h3 (from g1 to h3)
+  g1f3 (from g1 to f3)
+  b1c3 (from b1 to c3)
+  b1a3 (from b1 to a3)
+  h2h3 (from h2 to h3)
+  g2g3 (from g2 to g3)
+  f2f3 (from f2 to f3)
+  e2e3 (from e2 to e3)
+  d2d3 (from d2 to d3)
+  c2c3 (from c2 to c3)
+  b2b3 (from b2 to b3)
+  a2a3 (from a2 to a3)
+  h2h4 (from h2 to h4)
+  g2g4 (from g2 to g4)
+  f2f4 (from f2 to f4)
+  e2e4 (from e2 to e4)
+  d2d4 (from d2 to d4)
+  c2c4 (from c2 to c4)
+  b2b4 (from b2 to b4)
+  a2a4 (from a2 to a4)
+
+Running engine search (5 seconds, depth 6)...
+info string SlowMate v3.2 - Allocated time: 5.000s
+info string Opening book move: e2e4
+
+Engine chose: e2e4
+  From: e2
+  To: e4
+  Moving: P (1)
+
+======================================================================
+Testing: Before 12. Ne4?? blunder
+FEN: r1bqkb1r/ppp2ppp/2n2n2/3pp3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 4 12
+======================================================================
+
+Position:
+r . b q k b . r
+p p p . . p p p
+. . n . . n . .
+. . . p p . . .
+. . . . P . . .
+. . N . . N . .
+P P P P . P P P
+R . B Q K B . R
+
+Turn: White
+In check: False
+
+Legal moves (30):
+  f3g5 (from f3 to g5)
+  f3e5 (from f3 to e5)
+  f3h4 (from f3 to h4)
+  f3d4 (from f3 to d4)
+  f3g1 (from f3 to g1)
+  c3d5 (from c3 to d5)
+  c3b5 (from c3 to b5)
+  c3a4 (from c3 to a4)
+  c3e2 (from c3 to e2)
+  c3b1 (from c3 to b1)
+  h1g1 (from h1 to g1)
+  f1a6 (from f1 to a6)
+  f1b5 (from f1 to b5)
+  f1c4 (from f1 to c4)
+  f1d3 (from f1 to d3)
+  f1e2 (from f1 to e2)
+  e1e2 (from e1 to e2)
+  d1e2 (from d1 to e2)
+  a1b1 (from a1 to b1)
+  e4d5 (from e4 to d5)
+  h2h3 (from h2 to h3)
+  g2g3 (from g2 to g3)
+  d2d3 (from d2 to d3)
+  b2b3 (from b2 to b3)
+  a2a3 (from a2 to a3)
+  h2h4 (from h2 to h4)
+  g2g4 (from g2 to g4)
+  d2d4 (from d2 to d4)
+  b2b4 (from b2 to b4)
+  a2a4 (from a2 to a4)
+
+Running engine search (5 seconds, depth 6)...
+info string SlowMate v3.2 - Allocated time: 5.000s
+info string Opening book move: f3d4
+
+Engine chose: f3d4
+  From: f3
+  To: d4
+  Moving: N (2)
+  WARNING: This hangs the N to c6d4!
+
+======================================================================
+Testing: Before 14. Bf4?? blunder
+FEN: r1b1kb1r/ppp2ppp/2n2n2/3pp3/4q3/2N5/PPPP1PPP/R1BQKB1R w KQkq - 0 14
+======================================================================
+
+Position:
+r . b . k b . r
+p p p . . p p p
+. . n . . n . .
+. . . p p . . .
+. . . . q . . .
+. . N . . . . .
+P P P P . P P P
+R . B Q K B . R
+
+Turn: White
+In check: True
+
+Legal moves (4):
+  c3e4 (from c3 to e4)
+  c3e2 (from c3 to e2)
+  f1e2 (from f1 to e2)
+  d1e2 (from d1 to e2)
+
+Running engine search (5 seconds, depth 6)...
+info string SlowMate v3.2 - Allocated time: 5.000s
+info string Opening book move: f1e2
+
+Engine chose: f1e2
+  From: f1
+  To: e2
+  Moving: B (3)
+  WARNING: This hangs the B to e4e2!
+
+======================================================================
+Testing: Before 18. Re4?? blunder
+FEN: 2kr1b1r/ppp2ppp/2n2n2/3pp3/4q3/2N5/PPPP1PPP/R1BQK2R w KQ - 4 18
+======================================================================
+
+Position:
+. . k r . b . r
+p p p . . p p p
+. . n . . n . .
+. . . p p . . .
+. . . . q . . .
+. . N . . . . .
+P P P P . P P P
+R . B Q K . . R
+
+Turn: White
+In check: True
+
+Legal moves (4):
+  e1f1 (from e1 to f1)
+  c3e4 (from c3 to e4)
+  c3e2 (from c3 to e2)
+  d1e2 (from d1 to e2)
+
+Running engine search (5 seconds, depth 6)...
+info string SlowMate v3.2 - Allocated time: 5.000s
+info string Opening book move: c3e4
+
+Engine chose: c3e4
+  From: c3
+  To: e4
+  Moving: N (2)
+  WARNING: This hangs the N to f6e4!

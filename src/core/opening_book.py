@@ -102,7 +102,14 @@ class AdvancedOpeningBook:
         }
     
     def select_strategic_move(self, board: chess.Board, opponent_id: str = "V7P3R") -> Optional[str]:
-        """Select opening move based on strategic considerations."""
+        """Select opening move based on strategic considerations.
+        
+        Returns None if we're out of opening (move > 15) or no book move available.
+        """
+        # CRITICAL FIX: Only use opening book for first 15 moves (30 half-moves)
+        if len(board.move_stack) > 30:
+            return None
+        
         fen = board.fen()
         
         # Check if position is in enhanced book
@@ -122,8 +129,8 @@ class AdvancedOpeningBook:
                         if best_move:
                             return best_move['move']
         
-        # Fallback to principle-based move selection
-        return self._select_by_principles(board)
+        # CRITICAL FIX: Do NOT fallback to principles - let engine search instead
+        return None
     
     def _analyze_opponent_style(self, opponent_id: str) -> str:
         """Analyze opponent's playing style based on game history."""
