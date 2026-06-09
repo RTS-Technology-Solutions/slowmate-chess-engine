@@ -5,7 +5,6 @@ Focus on rapid development, center control, and tactical awareness.
 """
 import os
 import json
-import random
 import chess
 from typing import Optional, List, Dict, Tuple
 from collections import defaultdict
@@ -15,7 +14,12 @@ class AdvancedOpeningBook:
     """Enhanced opening book with strategic repertoire and opponent adaptation."""
     
     def __init__(self, book_path: Optional[str] = None):
-        self.book_path = book_path or os.path.join(os.path.dirname(__file__), '../../data/openings/opening_book.json')
+        env_book_path = os.getenv('SLOWMATE_OPENING_BOOK_PATH')
+        self.book_path = (
+            book_path
+            or env_book_path
+            or os.path.join(os.path.dirname(__file__), '../../data/openings/opening_book.json')
+        )
         self.book = self._load_book()
         self.game_history = defaultdict(list)  # Track opponent patterns
         self.repertoire = self._build_strategic_repertoire()
@@ -120,8 +124,8 @@ class AdvancedOpeningBook:
             if isinstance(moves_data, list):
                 if len(moves_data) > 0:
                     if isinstance(moves_data[0], str):
-                        # Old format - just return random move
-                        return random.choice(moves_data)
+                        # Old format - deterministic first listed move
+                        return moves_data[0]
                     elif isinstance(moves_data[0], dict):
                         # New format - use strategic selection
                         opponent_style = self._analyze_opponent_style(opponent_id)
@@ -165,21 +169,18 @@ class AdvancedOpeningBook:
             
             adjusted_moves.append({**move_data, 'adjusted_weight': weight})
         
-        # Select based on weighted random choice
-        total_weight = sum(move['adjusted_weight'] for move in adjusted_moves)
-        if total_weight == 0:
-            return random.choice(adjusted_moves) if adjusted_moves else None
-        
-        # Weighted random selection with slight preference for higher weights
-        choice = random.randint(1, total_weight)
-        current_weight = 0
-        
-        for move_data in adjusted_moves:
-            current_weight += move_data['adjusted_weight']
-            if choice <= current_weight:
-                return move_data
-        
-        return adjusted_moves[-1] if adjusted_moves else None
+        # Deterministic selection: highest adjusted weight, then base weight, then move key.
+        if not adjusted_moves:
+            return None
+
+        adjusted_moves.sort(
+            key=lambda entry: (
+                -entry['adjusted_weight'],
+                -entry.get('weight', 0),
+                entry.get('move', '')
+            )
+        )
+        return adjusted_moves[0]
     
     def _select_by_principles(self, board: chess.Board) -> Optional[str]:
         """Select move based on opening principles when not in book."""
@@ -216,13 +217,12 @@ class AdvancedOpeningBook:
             
             move_scores.append((move, score))
         
-        # Select best scoring move with some randomness
+        # Select best scoring move deterministically
         move_scores.sort(key=lambda x: x[1], reverse=True)
         best_score = move_scores[0][1]
-        
-        # Select from top 3 moves to add variety
-        top_moves = [move for move, score in move_scores[:3] if score >= best_score - 10]
-        return random.choice(top_moves).uci() if top_moves else legal_moves[0].uci()
+        top_moves = [move for move, score in move_scores if score == best_score]
+        top_moves.sort(key=lambda move: move.uci())
+        return top_moves[0].uci() if top_moves else legal_moves[0].uci()
     
     def update_opponent_history(self, opponent_id: str, moves: List[str], result: str):
         """Update opponent move history for future analysis."""
@@ -250,9 +250,9 @@ class AdvancedOpeningBook:
         return []
 
     def select_book_move(self, fen: str) -> Optional[str]:
-        """Legacy compatibility - select random book move."""
+        """Legacy compatibility - select deterministic book move."""
         moves = self.get_book_moves(fen)
-        return random.choice(moves) if moves else None
+        return moves[0] if moves else None
 
     def in_book(self, fen: str) -> bool:
         """Legacy compatibility - check if position is in book."""

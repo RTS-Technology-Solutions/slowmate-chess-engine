@@ -14,6 +14,7 @@ from .core.board import Board
 from .core.moves import MoveGenerator
 from .core.enhanced_evaluate import EnhancedEvaluator
 from .core.opening_book import AdvancedOpeningBook
+from .core.syzygy_tablebase import SyzygyTablebase
 from .search.enhanced import TranspositionTable, MoveOrderer, NodeType
 from .uci.protocol_v2_2 import UCIProtocol
 
@@ -27,6 +28,7 @@ class SlowMateEngine:
         self.move_generator = MoveGenerator(self.board)
         self.evaluator = EnhancedEvaluator()
         self.opening_book = AdvancedOpeningBook()  # v3.2: Enhanced opening book
+        self.syzygy_tablebase = SyzygyTablebase()  # v3.5: Exact 3-4-5 endgame probing
         self.tt = TranspositionTable(size_mb=64)
         self.move_orderer = MoveOrderer()
         self.uci = UCIProtocol(self)
@@ -36,6 +38,11 @@ class SlowMateEngine:
         self.last_score = None
         self.start_time = None
         self.current_pv = []  # Principal variation line
+        self.telemetry = {
+            'search_calls': 0,
+            'book_hits': 0,
+            'syzygy_hits': 0,
+        }
         
         # v3.0: Advanced search parameters
         self.aspiration_window = 50
@@ -54,7 +61,7 @@ class SlowMateEngine:
         
     def get_version(self) -> str:
         """Return engine version."""
-        return "3.4"
+        return "3.5"
         
     def new_game(self):
         """Reset the engine for a new game."""
@@ -98,6 +105,7 @@ class SlowMateEngine:
         self.last_score = None
         self.start_time = time.time()
         self.uci.stop_requested = False
+        self.telemetry['search_calls'] += 1
         
         # Calculate time allocation
         allocated_time = self._calculate_time_allocation(
@@ -106,28 +114,51 @@ class SlowMateEngine:
         self.search_deadline = self.start_time + allocated_time
         
         try:
-            self.uci._out(f"info string SlowMate v3.2 - Allocated time: {allocated_time:.3f}s")
+            self.uci._out(f"info string SlowMate v3.5 - Allocated time: {allocated_time:.3f}s")
+            self.uci._out(
+                "info string telemetry "
+                f"searches={self.telemetry['search_calls']} "
+                f"book_hits={self.telemetry['book_hits']} "
+                f"syzygy_hits={self.telemetry['syzygy_hits']}"
+            )
         except Exception:
             pass
+
+        # Get legal moves early for all subsequent fast-path checks.
+        moves = self.move_generator.get_legal_moves()
+        if not moves:
+            return None
+
+        # v3.5: Prefer exact Syzygy move when 3-4-5 piece tablebase is available.
+        tb_move = self.syzygy_tablebase.select_move(self.board.board)
+        if tb_move and tb_move in moves:
+            self.telemetry['syzygy_hits'] += 1
+            try:
+                self.uci._out(
+                    f"info string Syzygy move: {tb_move.uci()} "
+                    f"(hit {self.telemetry['syzygy_hits']})"
+                )
+            except Exception:
+                pass
+            return tb_move
         
         # v3.2: Check opening book first
         book_move = self.opening_book.select_strategic_move(self.board.board, "V7P3R")
         if book_move:
             try:
-                move = chess.Move.from_uci(book_move)
-                if move in self.board.board.legal_moves:
+                move = self._parse_book_move(book_move)
+                if move and move in moves and not self._is_risky_opening_move(move):
+                    self.telemetry['book_hits'] += 1
                     try:
-                        self.uci._out(f"info string Opening book move: {book_move}")
+                        self.uci._out(
+                            f"info string Opening book move: {book_move} "
+                            f"(hit {self.telemetry['book_hits']})"
+                        )
                     except Exception:
                         pass
                     return move
             except:
                 pass  # Invalid book move, continue with search
-        
-        # Get legal moves
-        moves = self.move_generator.get_legal_moves()
-        if not moves:
-            return None
             
         best_move = moves[0]  # Fallback move
         best_score = -30000
@@ -190,6 +221,44 @@ class SlowMateEngine:
                 break
                 
         return best_move
+
+    def _parse_book_move(self, book_move: str) -> Optional[chess.Move]:
+        """Parse UCI first, then SAN for compatibility with legacy book formats."""
+        try:
+            return chess.Move.from_uci(book_move)
+        except Exception:
+            pass
+
+        try:
+            return self.board.board.parse_san(book_move)
+        except Exception:
+            return None
+
+    def _is_risky_opening_move(self, move: chess.Move) -> bool:
+        """Filter weak early-opening novelty moves from book output."""
+        if len(self.board.board.move_stack) > 6:
+            return False
+
+        piece = self.board.board.piece_at(move.from_square)
+        if not piece:
+            return False
+
+        # Avoid rim-knight starts in early opening unless found by search instead.
+        if piece.piece_type == chess.KNIGHT:
+            rim_knight_jumps = {
+                (chess.B1, chess.A3),
+                (chess.G1, chess.H3),
+                (chess.B8, chess.A6),
+                (chess.G8, chess.H6),
+            }
+            return (move.from_square, move.to_square) in rim_knight_jumps
+
+        # Avoid edge pawn pushes as opening-book choices in first few plies.
+        if piece.piece_type == chess.PAWN:
+            edge_pawn_starts = {chess.A2, chess.H2, chess.A7, chess.H7}
+            return move.from_square in edge_pawn_starts
+
+        return False
     
     def _calculate_time_allocation(self, wtime: Optional[int], btime: Optional[int],
                                  winc: Optional[int], binc: Optional[int],

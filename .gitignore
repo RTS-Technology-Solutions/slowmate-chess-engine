@@ -24,4 +24,7 @@ lichess-token.txt
 .env
 .env.*
 config.yml
+
+# Other project directories
 lichess-bot/
+data/

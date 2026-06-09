@@ -10,11 +10,11 @@ import os
 import signal
 from typing import Optional
 
-# Add the parent directory to the path to import slowmate modules
+# Add the project root to path so src.* imports resolve in standalone mode.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from slowmate.engine import SlowMateEngine
-from slowmate.uci.protocol_v2_2 import UCIProtocol
+from src.engine import SlowMateEngine
+from src.uci.protocol_v2_2 import UCIProtocol
 
 
 class UCIMain:

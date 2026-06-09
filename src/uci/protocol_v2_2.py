@@ -130,7 +130,14 @@ class UCIProtocol:
     
     def _handle_uci(self):
         """Handle UCI initialization."""
-        self._out("id name SlowMate v3.3")
+        version = "unknown"
+        if hasattr(self.engine, 'get_version'):
+            try:
+                version = self.engine.get_version()
+            except Exception:
+                version = "unknown"
+
+        self._out(f"id name SlowMate v{version}")
         self._out("id author SlowMate Team")
         
         # Send options
