@@ -1,9 +1,4 @@
-"""
-SlowMate Chess Engine v3.4 - Opening Book Scope Fix
-Critical bug fix: Opening book was applying to ALL positions (entire game),
-generating terrible fallback moves. Now limited to first 15 moves only.
-Also includes v3.3 mate detection fix in quiescence search.
-"""
+"""SlowMate Chess Engine v3.6."""
 
 import chess
 import time
@@ -20,7 +15,7 @@ from .uci.protocol_v2_2 import UCIProtocol
 
 
 class SlowMateEngine:
-    """SlowMate v3.3 - Mate Detection Fix for Competitive Play."""
+    """SlowMate engine with corrected transposition-table bound handling."""
     
     def __init__(self):
         """Initialize the production chess engine."""
@@ -61,7 +56,7 @@ class SlowMateEngine:
         
     def get_version(self) -> str:
         """Return engine version."""
-        return "3.5"
+        return "3.6"
         
     def new_game(self):
         """Reset the engine for a new game."""
@@ -114,7 +109,7 @@ class SlowMateEngine:
         self.search_deadline = self.start_time + allocated_time
         
         try:
-            self.uci._out(f"info string SlowMate v3.5 - Allocated time: {allocated_time:.3f}s")
+            self.uci._out(f"info string SlowMate v3.6 - Allocated time: {allocated_time:.3f}s")
             self.uci._out(
                 "info string telemetry "
                 f"searches={self.telemetry['search_calls']} "
@@ -330,6 +325,8 @@ class SlowMateEngine:
     def _search_depth_with_pv(self, depth: int, alpha: int, beta: int, 
                              moves: List[chess.Move]) -> Tuple[Optional[chess.Move], int, List[chess.Move]]:
         """Search all moves at a given depth and collect principal variation."""
+        original_alpha = alpha
+        original_beta = beta
         best_move = None
         best_score = -30000
         best_pv = []
@@ -387,9 +384,9 @@ class SlowMateEngine:
         # Store in transposition table
         if best_move:
             node_type = NodeType.EXACT
-            if best_score <= alpha:
+            if best_score <= original_alpha:
                 node_type = NodeType.UPPER
-            elif best_score >= beta:
+            elif best_score >= original_beta:
                 node_type = NodeType.LOWER
             self.tt.store(pos_key, depth, best_score, node_type, best_move)
             
@@ -398,6 +395,8 @@ class SlowMateEngine:
     def _search_depth(self, depth: int, alpha: int, beta: int, 
                      moves: List[chess.Move]) -> Tuple[Optional[chess.Move], int]:
         """Search all moves at a given depth."""
+        original_alpha = alpha
+        original_beta = beta
         best_move = None
         best_score = -30000
         
@@ -451,9 +450,9 @@ class SlowMateEngine:
         # Store in transposition table
         if best_move:
             node_type = NodeType.EXACT
-            if best_score <= alpha:
+            if best_score <= original_alpha:
                 node_type = NodeType.UPPER
-            elif best_score >= beta:
+            elif best_score >= original_beta:
                 node_type = NodeType.LOWER
             self.tt.store(pos_key, depth, best_score, node_type, best_move)
             
@@ -461,6 +460,8 @@ class SlowMateEngine:
     
     def _negamax_with_pv(self, depth: int, alpha: int, beta: int) -> Tuple[int, List[chess.Move]]:
         """Enhanced negamax search with principal variation collection."""
+        original_alpha = alpha
+        original_beta = beta
         self.nodes += 1
         
         # Time management check
@@ -537,9 +538,9 @@ class SlowMateEngine:
         # Store in transposition table
         if best_move:
             node_type = NodeType.EXACT
-            if best_score <= alpha:
+            if best_score <= original_alpha:
                 node_type = NodeType.UPPER
-            elif best_score >= beta:
+            elif best_score >= original_beta:
                 node_type = NodeType.LOWER
             self.tt.store(pos_key, depth, best_score, node_type, best_move)
             
@@ -547,6 +548,8 @@ class SlowMateEngine:
 
     def _negamax(self, depth: int, alpha: int, beta: int) -> int:
         """Enhanced negamax search with pruning and extensions."""
+        original_alpha = alpha
+        original_beta = beta
         self.nodes += 1
         
         # Time management check
@@ -620,9 +623,9 @@ class SlowMateEngine:
         # Store in transposition table
         if best_move:
             node_type = NodeType.EXACT
-            if best_score <= alpha:
+            if best_score <= original_alpha:
                 node_type = NodeType.UPPER
-            elif best_score >= beta:
+            elif best_score >= original_beta:
                 node_type = NodeType.LOWER
             self.tt.store(pos_key, depth, best_score, node_type, best_move)
             

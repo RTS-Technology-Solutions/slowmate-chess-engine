@@ -1,3 +1,12 @@
+---
+project:
+  id: slowmate-chess-engine
+  name: SlowMate Chess Engine
+  status: feature-complete
+  tags: [game, chess, AI]
+  priority: medium
+  next_action: Revisions and updates for v3.6 or v4.0
+---
 # SlowMate Chess Engine
 
 A self-learning, incremental chess engine built and maintained entirely by Copilot Agents, coded in Python with emphasis on clarity, simplicity, and UCI compatibility.
